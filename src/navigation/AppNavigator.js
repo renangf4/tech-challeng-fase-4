@@ -12,6 +12,10 @@ import TeachersListScreen from '../screens/TeachersListScreen';
 import TeacherFormScreen from '../screens/TeacherFormScreen';
 import StudentsListScreen from '../screens/StudentsListScreen';
 import StudentFormScreen from '../screens/StudentFormScreen';
+import PostsIcon from '../components/icons/PostsIcon';
+import AdminIcon from '../components/icons/AdminIcon';
+import TeacherIcon from '../components/icons/TeacherIcon';
+import StudentIcon from '../components/icons/StudentIcon';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -163,26 +167,47 @@ const AppNavigator = () => {
 
   if (user.userType === 'teacher') {
     return (
-      <Tab.Navigator>
+      <Tab.Navigator
+        screenOptions={{
+          tabBarActiveTintColor: '#007AFF',
+          tabBarInactiveTintColor: '#666',
+        }}
+      >
         <Tab.Screen
           name="Home"
           component={MainStack}
-          options={{ headerShown: false, title: 'Posts' }}
+          options={{
+            headerShown: false,
+            title: 'Posts',
+            tabBarIcon: ({ color, size }) => <PostsIcon color={color} size={size} />,
+          }}
         />
         <Tab.Screen
           name="AdminTab"
           component={AdminStack}
-          options={{ headerShown: false, title: 'Admin' }}
+          options={{
+            headerShown: false,
+            title: 'Admin',
+            tabBarIcon: ({ color, size }) => <AdminIcon color={color} size={size} />,
+          }}
         />
         <Tab.Screen
           name="TeachersTab"
           component={TeachersStack}
-          options={{ headerShown: false, title: 'Professores' }}
+          options={{
+            headerShown: false,
+            title: 'Professores',
+            tabBarIcon: ({ color, size }) => <TeacherIcon color={color} size={size} />,
+          }}
         />
         <Tab.Screen
           name="StudentsTab"
           component={StudentsStack}
-          options={{ headerShown: false, title: 'Estudantes' }}
+          options={{
+            headerShown: false,
+            title: 'Estudantes',
+            tabBarIcon: ({ color, size }) => <StudentIcon color={color} size={size} />,
+          }}
         />
       </Tab.Navigator>
     );
