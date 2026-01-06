@@ -21,7 +21,14 @@ export const updateStudent = async (id, studentData) => {
 };
 
 export const deleteStudent = async (id) => {
-  const response = await api.delete(`/v1/students/${id}`);
-  return response.data;
+  console.log('deleteStudent service called with id:', id);
+  try {
+    const response = await api.delete(`/v1/students/${id}`);
+    console.log('deleteStudent response:', response);
+    return response.data;
+  } catch (error) {
+    console.error('deleteStudent error:', error);
+    throw error;
+  }
 };
 

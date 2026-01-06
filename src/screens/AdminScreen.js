@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getAllPosts, deletePost } from '../services/posts';
@@ -41,27 +42,71 @@ const AdminScreen = ({ navigation }) => {
     setRefreshing(false);
   };
 
-  const handleDelete = (postId) => {
-    Alert.alert(
-      'Confirmar exclusão',
-      'Tem certeza que deseja excluir este post?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deletePost(postId);
-              await loadPosts();
-              Alert.alert('Sucesso', 'Post excluído com sucesso');
-            } catch (error) {
-              Alert.alert('Erro', 'Não foi possível excluir o post');
-            }
-          },
-        },
-      ]
-    );
+  const handleDelete = async (postId) => {
+    console.log('Delete button clicked for post:', postId);
+    
+    let confirmed = false;
+    
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.confirm) {
+      confirmed = window.confirm('Tem certeza que deseja excluir este post?');
+    } else {
+      confirmed = await new Promise((resolve) => {
+        Alert.alert(
+          'Confirmar exclusão',
+          'Tem certeza que deseja excluir este post?',
+          [
+            { 
+              text: 'Cancelar', 
+              style: 'cancel',
+              onPress: () => resolve(false)
+            },
+            {
+              text: 'Excluir',
+              style: 'destructive',
+              onPress: () => resolve(true)
+            },
+          ],
+          { cancelable: true, onDismiss: () => resolve(false) }
+        );
+      });
+    }
+
+    if (!confirmed) {
+      console.log('Delete cancelled');
+      return;
+    }
+
+    console.log('Delete confirmed, starting deletion...');
+    try {
+      const response = await deletePost(postId);
+      console.log('Delete response:', response);
+      
+      await loadPosts();
+      
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.alert) {
+        window.alert(response?.response || 'Post excluído com sucesso');
+      } else {
+        Alert.alert('Sucesso', response?.response || 'Post excluído com sucesso');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      
+      let errorMessage = 'Não foi possível excluir o post';
+      
+      if (error.response) {
+        errorMessage = error.response.data?.response || 
+                      error.response.data?.erro || 
+                      `Erro ${error.response.status}: ${error.response.statusText}`;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.alert) {
+        window.alert(errorMessage);
+      } else {
+        Alert.alert('Erro', errorMessage);
+      }
+    }
   };
 
   const renderPost = ({ item }) => (

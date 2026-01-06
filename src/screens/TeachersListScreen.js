@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getAllTeachers, deleteTeacher } from '../services/teachers';
@@ -45,27 +46,96 @@ const TeachersListScreen = ({ navigation }) => {
     setRefreshing(false);
   };
 
-  const handleDelete = (teacherId) => {
-    Alert.alert(
-      'Confirmar exclusão',
-      'Tem certeza que deseja excluir este professor?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteTeacher(teacherId);
-              await loadTeachers(page);
-              Alert.alert('Sucesso', 'Professor excluído com sucesso');
-            } catch (error) {
-              Alert.alert('Erro', 'Não foi possível excluir o professor');
-            }
-          },
-        },
-      ]
-    );
+  const handleDelete = async (teacherId) => {
+    console.log('=== DELETE START ===');
+    console.log('Delete button clicked for teacher:', teacherId);
+    
+    let confirmed = false;
+    
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.confirm) {
+      confirmed = window.confirm('Tem certeza que deseja excluir este professor?');
+    } else {
+      confirmed = await new Promise((resolve) => {
+        Alert.alert(
+          'Confirmar exclusão',
+          'Tem certeza que deseja excluir este professor?',
+          [
+            { 
+              text: 'Cancelar', 
+              style: 'cancel',
+              onPress: () => resolve(false)
+            },
+            {
+              text: 'Excluir',
+              style: 'destructive',
+              onPress: () => resolve(true)
+            },
+          ],
+          { cancelable: true, onDismiss: () => resolve(false) }
+        );
+      });
+    }
+    
+    if (!confirmed) {
+      console.log('Delete cancelled by user');
+      return;
+    }
+
+    console.log('=== DELETE CONFIRMED ===');
+    console.log('Delete confirmed by user, starting deletion...');
+    console.log('Calling deleteTeacher with id:', teacherId);
+    
+    try {
+      console.log('Before deleteTeacher call');
+      const response = await deleteTeacher(teacherId);
+      console.log('=== DELETE SUCCESS ===');
+      console.log('Delete response received:', JSON.stringify(response, null, 2));
+      
+      const currentPage = page;
+      console.log('Reloading teachers on page:', currentPage);
+      await loadTeachers(currentPage);
+      
+      console.log('Showing success alert');
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.alert) {
+        window.alert(response?.response || 'Professor excluído com sucesso');
+      } else {
+        Alert.alert('Sucesso', response?.response || 'Professor excluído com sucesso');
+      }
+    } catch (error) {
+      console.error('=== DELETE ERROR ===');
+      console.error('Delete error caught:', error);
+      console.error('Error type:', typeof error);
+      console.error('Error constructor:', error?.constructor?.name);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          baseURL: error.config?.baseURL,
+          headers: error.config?.headers
+        }
+      });
+      
+      let errorMessage = 'Não foi possível excluir o professor';
+      
+      if (error.response) {
+        errorMessage = error.response.data?.response || 
+                      error.response.data?.erro || 
+                      `Erro ${error.response.status}: ${error.response.statusText || 'Erro desconhecido'}`;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      console.log('Showing error alert:', errorMessage);
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.alert) {
+        window.alert(errorMessage);
+      } else {
+        Alert.alert('Erro', errorMessage);
+      }
+    }
   };
 
   const renderTeacher = ({ item }) => (
@@ -83,7 +153,13 @@ const TeachersListScreen = ({ navigation }) => {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.deleteButton}
-          onPress={() => handleDelete(item._id)}
+          onPress={(e) => {
+            e?.stopPropagation?.();
+            console.log('Delete button pressed for:', item._id);
+            handleDelete(item._id);
+          }}
+          activeOpacity={0.7}
+          onPressIn={() => console.log('Delete button pressed IN')}
         >
           <Text style={styles.deleteButtonText}>Excluir</Text>
         </TouchableOpacity>

@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getAllStudents, deleteStudent } from '../services/students';
@@ -45,27 +46,72 @@ const StudentsListScreen = ({ navigation }) => {
     setRefreshing(false);
   };
 
-  const handleDelete = (studentId) => {
-    Alert.alert(
-      'Confirmar exclusão',
-      'Tem certeza que deseja excluir este estudante?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteStudent(studentId);
-              await loadStudents(page);
-              Alert.alert('Sucesso', 'Estudante excluído com sucesso');
-            } catch (error) {
-              Alert.alert('Erro', 'Não foi possível excluir o estudante');
-            }
-          },
-        },
-      ]
-    );
+  const handleDelete = async (studentId) => {
+    console.log('Delete button clicked for student:', studentId);
+    
+    let confirmed = false;
+    
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.confirm) {
+      confirmed = window.confirm('Tem certeza que deseja excluir este estudante?');
+    } else {
+      confirmed = await new Promise((resolve) => {
+        Alert.alert(
+          'Confirmar exclusão',
+          'Tem certeza que deseja excluir este estudante?',
+          [
+            { 
+              text: 'Cancelar', 
+              style: 'cancel',
+              onPress: () => resolve(false)
+            },
+            {
+              text: 'Excluir',
+              style: 'destructive',
+              onPress: () => resolve(true)
+            },
+          ],
+          { cancelable: true, onDismiss: () => resolve(false) }
+        );
+      });
+    }
+
+    if (!confirmed) {
+      console.log('Delete cancelled');
+      return;
+    }
+
+    console.log('Delete confirmed, starting deletion...');
+    try {
+      const response = await deleteStudent(studentId);
+      console.log('Delete response:', response);
+      
+      const currentPage = page;
+      await loadStudents(currentPage);
+      
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.alert) {
+        window.alert(response?.response || 'Estudante excluído com sucesso');
+      } else {
+        Alert.alert('Sucesso', response?.response || 'Estudante excluído com sucesso');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      
+      let errorMessage = 'Não foi possível excluir o estudante';
+      
+      if (error.response) {
+        errorMessage = error.response.data?.response || 
+                      error.response.data?.erro || 
+                      `Erro ${error.response.status}: ${error.response.statusText}`;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.alert) {
+        window.alert(errorMessage);
+      } else {
+        Alert.alert('Erro', errorMessage);
+      }
+    }
   };
 
   const renderStudent = ({ item }) => (

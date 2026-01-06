@@ -33,7 +33,7 @@ const LoginScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Blogging Mobile</Text>
+      <Text style={styles.title}>Educablog</Text>
       <Text style={styles.subtitle}>Faça login para continuar</Text>
 
       <TextInput

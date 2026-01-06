@@ -21,7 +21,14 @@ export const updateTeacher = async (id, teacherData) => {
 };
 
 export const deleteTeacher = async (id) => {
-  const response = await api.delete(`/v1/teachers/${id}`);
-  return response.data;
+  console.log('deleteTeacher service called with id:', id);
+  try {
+    const response = await api.delete(`/v1/teachers/${id}`);
+    console.log('deleteTeacher response:', response);
+    return response.data;
+  } catch (error) {
+    console.error('deleteTeacher error:', error);
+    throw error;
+  }
 };
 

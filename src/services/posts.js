@@ -21,8 +21,15 @@ export const updatePost = async (id, postData) => {
 };
 
 export const deletePost = async (id) => {
-  const response = await api.delete(`/v1/posts/${id}`);
-  return response.data;
+  console.log('deletePost service called with id:', id);
+  try {
+    const response = await api.delete(`/v1/posts/${id}`);
+    console.log('deletePost response:', response);
+    return response.data;
+  } catch (error) {
+    console.error('deletePost error:', error);
+    throw error;
+  }
 };
 
 export const searchPosts = async (query) => {

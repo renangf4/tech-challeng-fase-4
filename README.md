@@ -132,32 +132,34 @@ O sistema de autenticação utiliza Context API para gerenciar o estado do usuá
 
 ## 🔌 Integração com Backend
 
-A aplicação consome os seguintes endpoints:
+A aplicação consome os seguintes endpoints da API em produção:
+
+**URL Base:** `https://apiblogpost.onrender.com`
 
 ### Autenticação
-- `POST /v1/auth/login` - Login
+- `POST /v1/auth/login` - Login (professores e estudantes)
 
 ### Posts
-- `GET /v1/posts` - Listar todos os posts
-- `GET /v1/posts/:id` - Obter post por ID
+- `GET /v1/posts` - Listar todos os posts (requer autenticação)
+- `GET /v1/posts/:id` - Obter post por ID (requer autenticação)
 - `POST /v1/posts` - Criar post (apenas professores)
 - `PUT /v1/posts/:id` - Atualizar post (apenas professores)
 - `DELETE /v1/posts/:id` - Excluir post (apenas professores)
-- `GET /v1/posts/search` - Buscar posts
+- `GET /v1/posts/search` - Buscar posts por título, conteúdo ou autor
 
 ### Professores
-- `GET /v1/teachers` - Listar professores (paginado)
-- `GET /v1/teachers/:id` - Obter professor por ID
-- `POST /v1/teachers` - Criar professor
-- `PUT /v1/teachers/:id` - Atualizar professor
-- `DELETE /v1/teachers/:id` - Excluir professor
+- `GET /v1/teachers?page=1&limit=10` - Listar professores paginado (apenas professores)
+- `GET /v1/teachers/:id` - Obter professor por ID (apenas professores)
+- `POST /v1/teachers` - Criar professor (primeiro professor sem auth, demais requerem auth de professor)
+- `PUT /v1/teachers/:id` - Atualizar professor (apenas professores)
+- `DELETE /v1/teachers/:id` - Excluir professor (apenas professores)
 
 ### Estudantes
-- `GET /v1/students` - Listar estudantes (paginado)
-- `GET /v1/students/:id` - Obter estudante por ID
-- `POST /v1/students` - Criar estudante
-- `PUT /v1/students/:id` - Atualizar estudante
-- `DELETE /v1/students/:id` - Excluir estudante
+- `GET /v1/students?page=1&limit=10` - Listar estudantes paginado (apenas professores)
+- `GET /v1/students/:id` - Obter estudante por ID (apenas professores)
+- `POST /v1/students` - Criar estudante (apenas professores)
+- `PUT /v1/students/:id` - Atualizar estudante (apenas professores)
+- `DELETE /v1/students/:id` - Excluir estudante (apenas professores)
 
 ## 🛠️ Tecnologias Utilizadas
 
@@ -172,19 +174,59 @@ A aplicação consome os seguintes endpoints:
 
 - A aplicação utiliza hooks e componentes funcionais
 - O estado é gerenciado principalmente através de Context API
-- Todas as requisições incluem o token de autenticação automaticamente
+- Todas as requisições incluem o token de autenticação automaticamente via interceptors do Axios
 - A navegação é condicional baseada no tipo de usuário (professor/estudante)
+- Utiliza `useFocusEffect` para recarregar dados automaticamente ao voltar para uma tela
+- Na versão web, utiliza `window.confirm` e `window.alert` para melhor compatibilidade
+- Logs detalhados no console para debug durante desenvolvimento
 
 ## 🔒 Segurança
 
 - Tokens JWT são armazenados no AsyncStorage
-- Requisições autenticadas incluem o token no header Authorization
+- Requisições autenticadas incluem o token no header `Authorization: Bearer <token>`
 - Validação de permissões no frontend e backend
-- Senhas não são armazenadas em texto plano
+- Senhas não são armazenadas em texto plano (hash bcrypt no backend)
+- Interceptors do Axios garantem que todas as requisições autenticadas incluam o token
+- Logout remove token e dados do usuário do AsyncStorage
 
 ## 📱 Compatibilidade
 
 - Android 5.0+
 - iOS 11.0+
-- Web (via Expo)
+- Web (via Expo) - com suporte a `window.confirm` e `window.alert`
+
+## 🐛 Troubleshooting
+
+### Problemas comuns
+
+1. **Erro de conexão com a API**
+   - Verifique se a URL da API está correta em `src/config/api.js`
+   - Confirme que o backend está rodando e acessível
+
+2. **Token expirado**
+   - Faça logout e login novamente
+   - O token expira após 24 horas
+
+3. **Alert não aparece na web**
+   - A aplicação usa `window.confirm` e `window.alert` na web automaticamente
+   - Verifique se o navegador não está bloqueando pop-ups
+
+4. **Lista não atualiza após criar/editar**
+   - A aplicação usa `useFocusEffect` para recarregar automaticamente
+   - Se não atualizar, use o pull-to-refresh (arrastar para baixo)
+
+## 📊 Funcionalidades Implementadas
+
+✅ Autenticação de professores e estudantes  
+✅ Listagem de posts com busca  
+✅ Criação, edição e exclusão de posts (professores)  
+✅ Visualização de posts (todos os usuários)  
+✅ CRUD completo de professores (apenas professores)  
+✅ CRUD completo de estudantes (apenas professores)  
+✅ Paginação em listagens de professores e estudantes  
+✅ Página administrativa de posts  
+✅ Navegação por tabs (professores) e stack (estudantes)  
+✅ Refresh automático ao voltar para telas  
+✅ Tratamento de erros com mensagens descritivas  
+✅ Logs de debug no console
 
