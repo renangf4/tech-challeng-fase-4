@@ -35,10 +35,6 @@ const MainStack = () => {
               style={styles.logoutButton}
               onPress={async () => {
                 await logout();
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'Login' }],
-                });
               }}
             >
               <Text style={styles.logoutButtonText}>Sair</Text>
